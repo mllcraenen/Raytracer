@@ -29,15 +29,20 @@ int main() {
 
 
         for (int j = 0; j < imageWidth; j++) {
-            auto u = double(j) / (imageWidth - 1);
-            auto v = double(i) / (imageHeight - 1);
+            Color pixelColor(0,0,0);
+            
+            for(int sample = 0; sample < samplesPerPixel; sample++) {
+                auto u = (j + randomDouble()) / (imageWidth - 1);
+                auto v = (i + randomDouble()) / (imageHeight - 1);              
 
-            // Init Ray
-            Vec3 direction;
-            Ray r(origin,  llCorner + u*hor + v*ver - origin);
-            Color pixelColor = rayColor(r, world);
+                // Init Ray
+                Ray r = cam.getRay(u, v);
+                pixelColor += rayColor(r, world);                  
+            }
+
+
             // Write the Color to `cout`
-            writeColor(std::cout, pixelColor);
+            writeColor(std::cout, pixelColor, samplesPerPixel);
         }
     }
 
@@ -49,7 +54,8 @@ int main() {
 // Returns BG Color of a Ray based on its Y direction
 Color rayColor(const Ray& r, const Corporeal& world) {
     HitRecord rec;
-    if (world.hit(r, 0, infinity, rec)) return 0.5 * (rec.normal + Color(1, 1, 1));
+    if (world.hit(r, 0, infinity, rec)) 
+        return 0.5 * (rec.normal + Color(1, 1, 1));
 
     Vec3 unitDirection = unitVector(r.direction());
     auto t = 0.5 * (unitDirection.y() + 1.0);

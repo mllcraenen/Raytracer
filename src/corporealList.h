@@ -22,6 +22,7 @@ class CorporealList : public Corporeal {
         std::vector<shared_ptr<Corporeal>> objects;
 };
 
+// Checks whether a ray hits any physical object.
 bool CorporealList::hit(const Ray& r, double tMin, double tMax, HitRecord& rec) const {
     HitRecord tmp_rec;
     bool hitAnything = false;
