@@ -50,33 +50,22 @@ using std::sqrt;
 //// Constants
 // Define image parameters
 const auto aspectRatio = 16.0 / 9.0;
-const int imageWidth = 300;
+const int imageWidth = 1920;
 const int imageHeight = (int)(imageWidth / aspectRatio);
 
 const int samplesPerPixel = 100;
 const int maxBounceDepth = 50;
 const double imageGamma = 2.0;
 
-enum DiffuserType {
-    LAMBERT_APPROX = 0,
-    RAND_HEMISPHERE = 1
-};
-
-const DiffuserType DIFFUSER = LAMBERT_APPROX;
-
 ////Variables
-// Declare camera and define parameters
-auto viewportHeight = 2.0;
-auto viewportWidth = aspectRatio * viewportHeight;
-auto focalLength = 1.0;
+Point3 cameraOrigin = Point3(13, 2, 3);
+Point3 cameraLookAt = Point3(0, 0, 0);
+Vec3 cameraUp = Vec3(0, 1, 0);
+auto hFOV = 50.0;
+auto distToFocus = 10.0;
+auto aperture = 0.1;
 
-auto origin = Point3(0, 0, 0);
-auto horizontal = Vec3(viewportWidth, 0, 0);
-auto vertical = Vec3(0, viewportHeight, 0);
-auto llCorner = origin - horizontal/2 - vertical/2 - Vec3(0, 0, focalLength);
-
-Camera cam;
-
+Camera cam(cameraOrigin, cameraLookAt, cameraUp, hFOV, aspectRatio, aperture, distToFocus);
 
 
 #endif

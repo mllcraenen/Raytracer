@@ -21,6 +21,6 @@
             "isDefault": true
           },
           "dependsOn": ["g++ build active file"]
-        }
+        },
     ]
   }

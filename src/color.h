@@ -17,10 +17,6 @@ void writeColor(std::ostream &out, Color pixelColor, int samplesPerPixel) {
     r = pow((scale * r), gammaPower);
     g = pow((scale * g), gammaPower);
     b = pow((scale * b), gammaPower);
-    
-    // r = sqrt(scale * r);
-    // g = sqrt(scale * g);
-    // b = sqrt(scale * b);
 
     // Output the PPM format pixel after remapping the clamped RGB values from [0,1] to [0,255].
     out << (int)(clamp1(r) * 256) << ' ' << (int)(clamp1(g) * 256) << ' ' << (int)(clamp1(b) * 256) << '\n';

@@ -68,6 +68,13 @@ class Vec3 {
             return Vec3(randomDouble(min, max), randomDouble(min, max), randomDouble(min, max));
         }
 
+        // Function that determines whether the vector is near zero.
+        bool nearZero() const {
+            // Return true if the vector is near zero in all dimensions
+            const auto s = 1e-8;
+            return (fabs(e[0]) < s) && (fabs(e[1]) < s) && (fabs(e[2]) < s);
+        }
+
     public:
         double e[3];
 };
@@ -159,6 +166,32 @@ Vec3 randomInHemisphere(const Vec3& normal) {
         return inUnitSphere;
     } // Otherwise return the backwards vector.
     else return -inUnitSphere;
+}
+
+// V = incoming ray, N = normal. Reflection is v - 2 * b, where |b| = v * n.
+// https://raytracing.github.io/images/fig-1.11-reflection.jpg
+Vec3 reflect(const Vec3& v, const Vec3& n) {
+    return v - 2 * dot(v,n) * n;
+}
+
+// Refraction based on Snell's Law. -> sin theta' = (eta / eta') sin theta' with incoming ray R.
+// The refracted ray R' can be split in R'perpendicular and R'parallel. The formulae for these are:
+//// R'perp = (eta / eta')(R + cos theta * n)
+//// R'para = - sqrt(1 - |R'perp|^2) * n
+Vec3 refract (const Vec3& R, const Vec3& n, double etaOverEtaPrime) {
+    auto cosTheta = fmin( dot(-R, n), 1.0);
+    Vec3 RprimePerp = etaOverEtaPrime * (R + cosTheta * n);
+    Vec3 RprimePara = - sqrt(fabs(1.0 - RprimePerp.lengthSquared())) * n;
+    // Return R' which is the sum of the perp and para vectors.
+    return RprimePerp + RprimePara;
+}
+
+Vec3 randomVectorInUnitDisk() {
+    while(true) {
+        auto p = Vec3(randomDouble(-1,1), randomDouble(-1,1), 0);
+        if (p.lengthSquared() >= 1) continue;
+        return p;
+    }
 }
 
 #endif

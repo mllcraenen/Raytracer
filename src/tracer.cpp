@@ -2,6 +2,7 @@
 
 #include "color.h"
 #include "corporealList.h"
+#include "material.h"
 #include "sphere.h"
 
 #include <iostream>
@@ -10,6 +11,8 @@
 void progressOut(int i, int imageHeight);
 Color rayColor(const Ray& r, const Corporeal& world, int depth);
 double hitSphere(const Point3& center, double radius, const Ray& r);
+CorporealList randomScene();
+
 
 int main() {
     //DEBUGTIMER
@@ -17,9 +20,17 @@ int main() {
 
     
     // Define World with objects
-    CorporealList world;
-    world.add(make_shared<Sphere>(Point3(0, 0, -1), 0.5));
-    world.add(make_shared<Sphere>(Point3(0, -100.5, -1), 100));
+    CorporealList world = randomScene();
+    // auto materialGround = make_shared<Metal>(Color(0.6, 0.6, 0.0), .2);
+    // auto materialLeft = make_shared<Dielectric>(1.5);
+    // auto materialCenter = make_shared<HemisphereDiffuse>(Color(0.9, 0.0, 0.9));
+    // auto materialRight = make_shared<Lambertian>(Color(0.4, 0.1, 0.1));
+
+    // world.add(make_shared<Sphere>(Point3( 0.0, -100.5, -1.0), 100.0, materialGround));
+    // world.add(make_shared<Sphere>(Point3( 0.0,    0.0, -1.0),   0.5, materialCenter));
+    // world.add(make_shared<Sphere>(Point3(-1.0,    0.0, -1.0),   0.5, materialLeft));
+    // world.add(make_shared<Sphere>(Point3(-1.0,    0.0, -1.0),  -0.4, materialLeft));
+    // world.add(make_shared<Sphere>(Point3( 1.0,    0.0, -1.0),   0.5, materialRight));
 
     // Define output
     freopen("out.ppm", "w", stdout);
@@ -30,7 +41,7 @@ int main() {
     // (0,0) is bottom left. 
     // Thus working from top to bottom left to right has us counting down for rows and counting up columns.
     for (int i = imageHeight - 1; i >= 0; i--) {
-        // progressOut(i, imageHeight);
+        progressOut(i, imageHeight);
 
 
         for (int j = 0; j < imageWidth; j++) {
@@ -71,17 +82,15 @@ Color rayColor(const Ray& r, const Corporeal& world, int depth) {
     
     // If the ray hits a physical ("Corporeal") object, diffuse. tMin is 0.001 to solve floating point bugs around 0.
     if (world.hit(r, 0.001, infinity, rec)) {
-        Point3 target;
-        // The target point of the new bounced ray is the result of a diffuse bounce.
-        // That is, impact point P plus the Normal + a random point in the unit sphere tangent to P.
-        if (DIFFUSER == LAMBERT_APPROX)
-            target = rec.p + rec.normal + randomUnitVector();
-        else {
-            target = rec.p + randomInHemisphere(rec.normal);
-        }
+        Ray scattered;
+        Color attenuation;
         
-        // Recursively keep bouncing with a new ray with origin P and direction target (random point in unit sphere) - P.
-        return 0.5 * rayColor(Ray(rec.p, target - rec.p), world, depth - 1);
+        // Scatter the ray in accordance with the Corporeal's Material.
+        if (rec.matPtr->scatter(r, rec, attenuation, scattered)) {
+            return attenuation * rayColor(scattered, world, depth - 1);
+        }
+
+        return Color(0,0,0);
     }
 
     Vec3 unitDirection = unitVector(r.direction());
@@ -115,6 +124,58 @@ double hitSphere(const Point3& center, double radius, const Ray& r) {
     }
 }
 
+CorporealList randomScene() {
+    CorporealList world;
+
+    //Pleasant shade of grey ground.
+    auto groundMat = make_shared<Lambertian>(Color(0.5, 0.5, 0.5));
+    world.add(make_shared<Sphere>(Point3(0, -1000, 0), 1000, groundMat));
+
+    for (int a = -11; a < 11; a++) {
+        for (int b = -11; b < 11; b++) {
+            auto chooseMat = randomDouble();
+            Point3 center(a + 0.9 * randomDouble(), 0.2, b + 0.9 * randomDouble());
+
+            if ((center - Point3(4, 0.2, 0)).length() > 0.9) {
+                shared_ptr<Material> sphereMat;
+
+                if (chooseMat < 0.3) {
+                    // Diffuse Lambertian
+                    auto albedo = Color::random() * Color::random();
+                    sphereMat = make_shared<Lambertian>(albedo);
+                    world.add(make_shared<Sphere>(center, 0.2, sphereMat));
+                } else if (chooseMat < 0.5) {
+                    // Diffuse Hemisphere
+                    auto albedo = Color::random() * Color::random();
+                    sphereMat = make_shared<HemisphereDiffuse>(albedo);
+                    world.add(make_shared<Sphere>(center, 0.2, sphereMat));
+                } else if (chooseMat < 0.8) {
+                    // Metal
+                    auto albedo = Color::random(0.5, 1);
+                    auto fuzz = randomDouble(0, 0.5);
+                    sphereMat = make_shared<Metal>(albedo, fuzz);
+                    world.add(make_shared<Sphere>(center, 0.2, sphereMat));
+                } else {
+                    // Glass
+                    sphereMat = make_shared<Dielectric>(1.5);
+                    world.add(make_shared<Sphere>(center, 0.2, sphereMat));
+                    if (randomDouble() < 0.5) world.add(make_shared<Sphere>(center, -0.15, sphereMat));
+                }
+            }
+        }
+    }
+
+    auto mat1 = make_shared<Dielectric>(1.5);
+    world.add(make_shared<Sphere>(Point3(0, 1, 0), 1.0, mat1));
+
+    auto mat2 = make_shared<Lambertian>(Color(0.4, 0.0, 0.5));
+    world.add(make_shared<Sphere>(Point3(-4, 1, 0), 1.0, mat2));
+
+    auto mat3 = make_shared<Metal>(Color(0.7, 0.6, 0.5), 0.0);
+    world.add(make_shared<Sphere>(Point3(4, 1, 0), 1.0, mat3));
+
+    return world;
+}
 
 // Displays pretty progress bar in terminal based on current row and rows still to render
 void progressOut(int i, int imageHeight) {
