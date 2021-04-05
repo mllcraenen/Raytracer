@@ -1,11 +1,15 @@
 #ifndef CORPOREAL_H
 #define CORPOREAL_H
 
-#include "ray.h"
+#include "tracer.h"
+
+// Declare the Material class to satisfy compiler as it's not defined here yet. 
+class Material;
 
 struct HitRecord {
     Point3 p;
     Vec3 normal;
+    shared_ptr<Material> matPtr;
     double t;
     // Whether the ray intersects from the front/outside or back/inside
     bool frontFace;

@@ -5,12 +5,17 @@
 #include "sphere.h"
 
 #include <iostream>
+#include <chrono>
 
 void progressOut(int i, int imageHeight);
-Color rayColor(const Ray& r, const Corporeal& world);
+Color rayColor(const Ray& r, const Corporeal& world, int depth);
 double hitSphere(const Point3& center, double radius, const Ray& r);
 
 int main() {
+    //DEBUGTIMER
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
+    
     // Define World with objects
     CorporealList world;
     world.add(make_shared<Sphere>(Point3(0, 0, -1), 0.5));
@@ -35,9 +40,9 @@ int main() {
                 auto u = (j + randomDouble()) / (imageWidth - 1);
                 auto v = (i + randomDouble()) / (imageHeight - 1);              
 
-                // Init Ray
+                // Birthe a Ray and send it out into the wild world
                 Ray r = cam.getRay(u, v);
-                pixelColor += rayColor(r, world);                  
+                pixelColor += rayColor(r, world, maxBounceDepth);                  
             }
 
 
@@ -47,15 +52,37 @@ int main() {
     }
 
 
+    //DEBUGTIMER
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+
     std::cerr << "\nRender complete.\n";
+    std::cerr << "Elapsed time = " << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count() << " [s]" << std::endl;
     return 0;
 }
 
-// Returns BG Color of a Ray based on its Y direction
-Color rayColor(const Ray& r, const Corporeal& world) {
+
+Color rayColor(const Ray& r, const Corporeal& world, int depth) {
     HitRecord rec;
-    if (world.hit(r, 0, infinity, rec)) 
-        return 0.5 * (rec.normal + Color(1, 1, 1));
+
+    // If the ray bounce limit is exceeded do not continue.
+    if (depth <= 0) {
+        return Color(0,0,0);
+    }
+    
+    // If the ray hits a physical ("Corporeal") object, diffuse. tMin is 0.001 to solve floating point bugs around 0.
+    if (world.hit(r, 0.001, infinity, rec)) {
+        Point3 target;
+        // The target point of the new bounced ray is the result of a diffuse bounce.
+        // That is, impact point P plus the Normal + a random point in the unit sphere tangent to P.
+        if (DIFFUSER == LAMBERT_APPROX)
+            target = rec.p + rec.normal + randomUnitVector();
+        else {
+            target = rec.p + randomInHemisphere(rec.normal);
+        }
+        
+        // Recursively keep bouncing with a new ray with origin P and direction target (random point in unit sphere) - P.
+        return 0.5 * rayColor(Ray(rec.p, target - rec.p), world, depth - 1);
+    }
 
     Vec3 unitDirection = unitVector(r.direction());
     auto t = 0.5 * (unitDirection.y() + 1.0);

@@ -7,12 +7,14 @@
 class Sphere : public Corporeal {
     public: 
         Sphere () {}
-        Sphere (Point3 cen, double r) : center(cen), radius(r) {};
+        Sphere (Point3 cen, double r, shared_ptr<Material> mat) 
+            : center(cen), radius(r), matPtr(mat) {};
 
         virtual bool hit(const Ray& r, double tMin, double tMax, HitRecord& rec) const override;
     public:
         Point3 center;
         double radius;
+        shared_ptr<Material> matPtr;
 };
 
 bool Sphere::hit(const Ray& r, double tMin, double tMax, HitRecord& rec) const {
@@ -39,6 +41,7 @@ bool Sphere::hit(const Ray& r, double tMin, double tMax, HitRecord& rec) const {
     rec.normal = (rec.p - center) / radius;
     Vec3 outwardNormal = (rec.p - center) / radius;
     rec.setFaceNormal(r, outwardNormal);
+    rec.matPtr = matPtr;
 
     return true;
 }

@@ -58,6 +58,16 @@ class Vec3 {
             return e[0]*e[0] + e[1]*e[1] + e[2]*e[2];
         }
 
+        // Generate a Vec3 with random elements [0,1]
+        inline static Vec3 random() {
+            return Vec3(randomDouble(), randomDouble(), randomDouble());
+        }
+
+        // Generate a Vec3 with random elements [min,max]
+        inline static Vec3 random(double min, double max) {
+            return Vec3(randomDouble(min, max), randomDouble(min, max), randomDouble(min, max));
+        }
+
     public:
         double e[3];
 };
@@ -119,6 +129,36 @@ inline Vec3 cross(const Vec3 &u, const Vec3 &v) {
 // Unit vector.
 inline Vec3 unitVector(Vec3 v) {
     return v / v.length();
+}
+
+
+// Generate a random vector p in the unit sphere. If its length squared is
+inline Vec3 randomVectorInUnitSphere() {
+    //TODO:: i is purely for a performance check here. Delete in future
+    // int i = 0;
+    while (true) {
+        auto p = Vec3::random(-1,1);
+        // i++;
+        if (p.lengthSquared() >= 1) continue;
+        // if (i > 5) std::cerr << i << ' ';
+        return p;
+    }
+}
+
+// Uses `randomVectorInUnitSphere()` to generate a random vector and normalizes it.
+Vec3 randomUnitVector() {
+    return unitVector(randomVectorInUnitSphere());
+}
+
+// Generates a random unit sphere vector for the random in hemisphere diffuser method.
+Vec3 randomInHemisphere(const Vec3& normal) {
+    Vec3 inUnitSphere = randomVectorInUnitSphere();
+    
+    //If the random vector is pointing in the same direction as the normal return it.
+    if (dot(inUnitSphere, normal) > 0.0) {
+        return inUnitSphere;
+    } // Otherwise return the backwards vector.
+    else return -inUnitSphere;
 }
 
 #endif

@@ -6,41 +6,10 @@
 #include <memory>
 #include <cstdlib>
 
-//// Common headers
 
-#include "vec3.h"
-#include "ray.h"
-#include "camera.h"
-
-//// Usings
-using std::shared_ptr;
-using std::make_shared;
-using std::sqrt;
-
-//// Constants
-// Define image parameters
-const auto aspectRatio = 16.0 / 9.0;
-const int imageWidth = 400;
-const int imageHeight = (int)(imageWidth / aspectRatio);
-const int samplesPerPixel = 100;
-
-// Utility
+// Utility constants
 const double infinity = std::numeric_limits<double>::infinity();
 const double pi = 3.1415926535897932385;
-
-////Variables
-// Declare camera and define parameters
-auto viewportHeight = 2.0;
-auto viewportWidth = aspectRatio * viewportHeight;
-auto focalLength = 1.0;
-
-auto origin = Point3(0, 0, 0);
-auto horizontal = Vec3(viewportWidth, 0, 0);
-auto vertical = Vec3(0, viewportHeight, 0);
-auto llCorner = origin - horizontal/2 - vertical/2 - Vec3(0, 0, focalLength);
-
-Camera cam;
-
 
 //// Utility functions
 inline double degreesToRadians(double deg) {
@@ -66,5 +35,48 @@ inline double clamp(double x, double min, double max) {
 inline double clamp1(double x) {
     return clamp(x, 0, 0.999);
 }
+
+//// Common headers
+
+#include "vec3.h"
+#include "ray.h"
+#include "camera.h"
+
+//// Usings
+using std::shared_ptr;
+using std::make_shared;
+using std::sqrt;
+
+//// Constants
+// Define image parameters
+const auto aspectRatio = 16.0 / 9.0;
+const int imageWidth = 300;
+const int imageHeight = (int)(imageWidth / aspectRatio);
+
+const int samplesPerPixel = 100;
+const int maxBounceDepth = 50;
+const double imageGamma = 2.0;
+
+enum DiffuserType {
+    LAMBERT_APPROX = 0,
+    RAND_HEMISPHERE = 1
+};
+
+const DiffuserType DIFFUSER = LAMBERT_APPROX;
+
+////Variables
+// Declare camera and define parameters
+auto viewportHeight = 2.0;
+auto viewportWidth = aspectRatio * viewportHeight;
+auto focalLength = 1.0;
+
+auto origin = Point3(0, 0, 0);
+auto horizontal = Vec3(viewportWidth, 0, 0);
+auto vertical = Vec3(0, viewportHeight, 0);
+auto llCorner = origin - horizontal/2 - vertical/2 - Vec3(0, 0, focalLength);
+
+Camera cam;
+
+
 
 #endif
