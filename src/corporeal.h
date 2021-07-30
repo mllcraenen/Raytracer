@@ -5,6 +5,7 @@
 
 // Declare the Material class to satisfy compiler as it's not defined here yet. 
 class Material;
+class AABB;
 
 struct HitRecord {
     Point3 p;
@@ -25,6 +26,7 @@ struct HitRecord {
 class Corporeal {
     public:
         virtual bool hit(const Ray& r, double tMin, double tMax, HitRecord& rec) const = 0;
+        virtual bool boundingBox(double time0, double time1, AABB& outputBox) const = 0;
 };
 
 #endif

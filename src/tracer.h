@@ -1,11 +1,12 @@
 #ifndef TRACER_H
 #define TRACER_H
 
+#define WIREFRAME_MODE
+
 #include <cmath>
 #include <limits>
 #include <memory>
 #include <cstdlib>
-
 
 // Utility constants
 const double infinity = std::numeric_limits<double>::infinity();
@@ -24,6 +25,11 @@ inline double randomDouble() {
 inline double randomDouble(double min, double max) {
     // Returns a random real in [min,max)
     return min + (max-min) * randomDouble();
+}
+
+inline int randomInt(int min, int max) {
+    // Returns a random integer in [min,max].
+    return static_cast<int>(randomDouble(min, max + 1));
 }
 
 inline double clamp(double x, double min, double max) {
@@ -50,7 +56,7 @@ using std::sqrt;
 //// Constants
 // Define image parameters
 const auto aspectRatio = 16.0 / 9.0;
-const int imageWidth = 1920;
+const int imageWidth = 800;
 const int imageHeight = (int)(imageWidth / aspectRatio);
 
 const int samplesPerPixel = 100;

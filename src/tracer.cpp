@@ -4,6 +4,8 @@
 #include "corporealList.h"
 #include "material.h"
 #include "sphere.h"
+#include "triangle.h"
+#include "bvh.h"
 
 #include <iostream>
 #include <chrono>
@@ -12,6 +14,7 @@ void progressOut(int i, int imageHeight);
 Color rayColor(const Ray& r, const Corporeal& world, int depth);
 double hitSphere(const Point3& center, double radius, const Ray& r);
 CorporealList randomScene();
+CorporealList devScene();
 
 
 int main() {
@@ -20,17 +23,8 @@ int main() {
 
     
     // Define World with objects
-    CorporealList world = randomScene();
-    // auto materialGround = make_shared<Metal>(Color(0.6, 0.6, 0.0), .2);
-    // auto materialLeft = make_shared<Dielectric>(1.5);
-    // auto materialCenter = make_shared<HemisphereDiffuse>(Color(0.9, 0.0, 0.9));
-    // auto materialRight = make_shared<Lambertian>(Color(0.4, 0.1, 0.1));
-
-    // world.add(make_shared<Sphere>(Point3( 0.0, -100.5, -1.0), 100.0, materialGround));
-    // world.add(make_shared<Sphere>(Point3( 0.0,    0.0, -1.0),   0.5, materialCenter));
-    // world.add(make_shared<Sphere>(Point3(-1.0,    0.0, -1.0),   0.5, materialLeft));
-    // world.add(make_shared<Sphere>(Point3(-1.0,    0.0, -1.0),  -0.4, materialLeft));
-    // world.add(make_shared<Sphere>(Point3( 1.0,    0.0, -1.0),   0.5, materialRight));
+    // CorporealList world = randomScene();
+    CorporealList world = devScene();
 
     // Define output
     freopen("out.ppm", "w", stdout);
@@ -122,6 +116,23 @@ double hitSphere(const Point3& center, double radius, const Ray& r) {
         //After solving the quadratic formula for the sphere return the smallest solution.
         return (-halfB - sqrt(discriminant)) / a;
     }
+}
+
+CorporealList devScene() {
+    CorporealList objects;
+    auto materialGround = make_shared<Metal>(Color(0.6, 0.6, 0.0), .2);
+    auto materialLeft = make_shared<Dielectric>(1.5);
+    auto materialCenter = make_shared<HemisphereDiffuse>(Color(0.9, 0.0, 0.9));
+    auto materialRight = make_shared<Lambertian>(Color(0.4, 0.1, 0.1));
+    auto materialFiretruckFuckingRed = make_shared<Lambertian>(Color(1.0, 0.05, 0.05));
+
+    objects.add(make_shared<Sphere>(Point3( 0.0, -100.5, -1.0), 100.0, materialGround));
+    objects.add(make_shared<Sphere>(Point3( 0.0,    0.0, -1.0),   0.5, materialCenter));
+    objects.add(make_shared<Sphere>(Point3(-1.0,    0.0, -1.0),   0.5, materialLeft));
+    objects.add(make_shared<Sphere>(Point3( 1.0,    0.0, -1.0),   0.5, materialRight));
+    objects.add(make_shared<Triangle>(Point3( 2.0, 2.0, 0.0), Point3(0.0, 0.0, 0.0), Point3( 3.0, 2.0, -1.0), materialFiretruckFuckingRed));
+
+    return CorporealList(make_shared<BvhNode>(objects, 0.0, 1.0));
 }
 
 CorporealList randomScene() {

@@ -23,6 +23,7 @@ class Vec3 {
         Vec3 operator-() const { 
             return Vec3(-e[0], -e[1], -e[2]);
         }
+        
         // Vec3[i] returns e[i], also when asked by reference
         double operator[](int i) const { return e[i]; }
         double& operator[](int i) { return e[i]; }
@@ -32,6 +33,14 @@ class Vec3 {
             e[0] += v.e[0];
             e[1] += v.e[1];
             e[2] += v.e[2];
+            return *this;
+        }
+
+        // Subtracting another vector to this through v1 (this) -= v2 just subtracts all the components of v2 from v1 and returns v1;
+        Vec3& operator-=(const Vec3 &v) {
+            e[0] -= v.e[0];
+            e[1] -= v.e[1];
+            e[2] -= v.e[2];
             return *this;
         }
 
