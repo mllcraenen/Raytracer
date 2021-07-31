@@ -17,6 +17,19 @@ class Sphere : public Corporeal {
         Point3 center;
         double radius;
         shared_ptr<Material> matPtr;
+
+    private:
+        /**
+         * p: point on a unit sphere in the origin. 
+         * u: returned value [0,1] of angle around Y axis from X=-1.
+         * v: returned value [0,1] of angle from Y=-1 to Y=+1
+         */
+        static void getSphereUV(const Point3& p, double& u, double& v) {
+            auto theta = acos(-p.y());
+            auto phi = atan2(-p.z(), p.x()) + pi;
+            u = phi / (2*pi);
+            v = theta / pi;
+        }
 };
 
 bool Sphere::boundingBox(double time0, double time1, AABB& outputBox) const {
@@ -53,6 +66,7 @@ bool Sphere::hit(const Ray& r, double tMin, double tMax, HitRecord& rec) const {
     rec.normal = (rec.p - center) / radius;
     Vec3 outwardNormal = (rec.p - center) / radius;
     rec.setFaceNormal(r, outwardNormal);
+    getSphereUV(outwardNormal, rec.u, rec.v);
     rec.matPtr = matPtr;
 
     return true;

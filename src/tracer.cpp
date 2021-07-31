@@ -10,7 +10,7 @@
 #include <iostream>
 #include <chrono>
 
-#define SCENE 1
+#define SCENE 0
 
 void progressOut(int i, int imageHeight);
 Color rayColor(const Ray& r, const Corporeal& world, int depth);
@@ -47,7 +47,7 @@ int main() {
     // (0,0) is bottom left. 
     // Thus working from top to bottom left to right has us counting down for rows and counting up columns.
     for (int i = imageHeight - 1; i >= 0; i--) {
-        // progressOut(i, imageHeight);
+        progressOut(i, imageHeight);
 
 
         for (int j = 0; j < imageWidth; j++) {
@@ -132,19 +132,21 @@ double hitSphere(const Point3& center, double radius, const Ray& r) {
 
 CorporealList devScene() {
     CorporealList objects;
-    auto materialGround = make_shared<Metal>(Color(0.6, 0.6, 0.0), .2);
+    auto checker = make_shared<Checker>(Color(0.2, 0.3, 0.9), Color(0.9, 0.9, 0.9));
+    auto checker2 = make_shared<Checker>(Color(0.6, 0.6, 0.1), Color(0.9, 0.9, 0.9)); 
+    auto materialGround = make_shared<Metal>(Color(0.5, 0.5, 0.5), .8);
+    // auto materialGround = make_shared<Lambertian>(checker2);
     auto materialLeft = make_shared<Dielectric>(1.5);
-    auto materialCenter = make_shared<HemisphereDiffuse>(Color(0.9, 0.0, 0.9));
-    auto materialRight = make_shared<Lambertian>(Color(0.4, 0.1, 0.1));
+    auto materialCenter = make_shared<Lambertian>(checker);
+    auto materialRight = make_shared<Lambertian>(Color(0.2, 0.4, 0.1));
     auto materialFiretruckFuckingRed = make_shared<Lambertian>(Color(1.0, 0.05, 0.05));
 
-    objects.add(make_shared<Sphere>(Point3( 0.0, -200.5, -1.0), 200.0, materialGround));
+    objects.add(make_shared<Sphere>(Point3( 0.0, -1000.5, -1.0), 1000.0, materialGround));
     objects.add(make_shared<Sphere>(Point3( 0.0,    0.0, -1.0),   0.5, materialCenter));
     objects.add(make_shared<Sphere>(Point3(-1.0,    0.0, -1.0),   0.5, materialLeft));
     objects.add(make_shared<Sphere>(Point3( 1.0,    0.0, -1.0),   0.5, materialRight));
-    objects.add(make_shared<Triangle>(Point3( 2.0, 2.0, 0.0), Point3(0.0, 0.0, 0.0), Point3( 3.0, 2.0, -1.0), materialFiretruckFuckingRed));
+    objects.add(make_shared<Triangle>(Point3( -0.5, 2.0, 0.0), Point3(0.0, 1.0, 0.0), Point3( 0.5, 2.0, 0.0), materialFiretruckFuckingRed));
 
-    // return objects;
     return CorporealList(make_shared<BvhNode>(objects, 0.0, 1.0));
 }
 

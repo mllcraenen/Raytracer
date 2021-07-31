@@ -6,6 +6,8 @@
 - Ingo Wald's papers like [fast, dynamic bvh's](https://graphics.stanford.edu/~boulos/papers/togbvh.pdf) 
 - Optimizing bvh tree generation
 - Implementing a good metric collecting system or more like learn to use `gprof`
+- procedural/progressive raytracing
+    - once this is in place you may wanna look into making it an app and moving the camera with keys
 
 ## Ideas from In One Weekend closing:
 - Make it physically accurate.   This will imply using spectra instead of RGB (I like just using a big array of wavelengths) and get something where you know the reflectances.   Popular is to get a [X-Rite MSCCC ColorChecker Classic](http://www.amazon.com/gp/product/B000JLO31C/ref=as_li_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=B000JLO31C&linkCode=as2&tag=inonwe09-20&linkId=CXVB5F4SE4HGNRHV) whose data is [available online](http://www.babelcolor.com/colorchecker-2.htm#CCP2_data).

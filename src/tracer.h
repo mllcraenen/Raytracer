@@ -1,7 +1,7 @@
 #ifndef TRACER_H
 #define TRACER_H
 
-#define WIREFRAME_MODE          // Bounding box rendering
+// #define WIREFRAME_MODE          // Bounding box rendering
 #define FRAME_THICKNESS 0.05 
 #define CULLING                 // Triangles are planes - transparent on the backside
 
@@ -58,15 +58,15 @@ using std::sqrt;
 //// Constants
 // Define image parameters
 const auto aspectRatio = 16.0 / 9.0;
-const int imageWidth = 250;
+const int imageWidth = 500;
 const int imageHeight = (int)(imageWidth / aspectRatio);
 
-const int samplesPerPixel = 10;
+const int samplesPerPixel = 1000;
 const int maxBounceDepth = 10;
 const double imageGamma = 2.0;
 
 //// Variables
-Point3 cameraOrigin = Point3(6, 3, 3);
+Point3 cameraOrigin = Point3(4, 2.5, 6);
 Point3 cameraLookAt = Point3(0, 1, -1);
 Vec3 cameraUp = Vec3(0, 1, 0);
 auto hFOV = 50.0;

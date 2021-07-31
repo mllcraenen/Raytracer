@@ -12,6 +12,9 @@ struct HitRecord {
     Vec3 normal;
     shared_ptr<Material> matPtr;
     double t;
+    // Surface coordinates of ray-object intersection point.
+    double u;
+    double v;
     // Whether the ray intersects from the front/outside or back/inside
     bool frontFace;
     // The ray intersected from the front/outside if the normal points in the opposite direction.
