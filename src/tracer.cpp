@@ -10,6 +10,8 @@
 #include <iostream>
 #include <chrono>
 
+#define SCENE 1
+
 void progressOut(int i, int imageHeight);
 Color rayColor(const Ray& r, const Corporeal& world, int depth);
 double hitSphere(const Point3& center, double radius, const Ray& r);
@@ -23,8 +25,18 @@ int main() {
 
     
     // Define World with objects
-    // CorporealList world = randomScene();
-    CorporealList world = devScene();
+    CorporealList world;
+    switch(SCENE) {
+        case 0: {
+            world = devScene();
+            break;
+        }
+        case 1: {
+            world = randomScene();
+            break;
+        }
+        default: return 1;
+    }
 
     // Define output
     freopen("out.ppm", "w", stdout);
@@ -35,7 +47,7 @@ int main() {
     // (0,0) is bottom left. 
     // Thus working from top to bottom left to right has us counting down for rows and counting up columns.
     for (int i = imageHeight - 1; i >= 0; i--) {
-        progressOut(i, imageHeight);
+        // progressOut(i, imageHeight);
 
 
         for (int j = 0; j < imageWidth; j++) {
@@ -61,7 +73,7 @@ int main() {
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
     std::cerr << "\nRender complete.\n";
-    std::cerr << "Elapsed time = " << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count() << " [s]" << std::endl;
+    std::cerr << "Elapsed time = " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << " [ms]" << std::endl;
     return 0;
 }
 
@@ -126,21 +138,22 @@ CorporealList devScene() {
     auto materialRight = make_shared<Lambertian>(Color(0.4, 0.1, 0.1));
     auto materialFiretruckFuckingRed = make_shared<Lambertian>(Color(1.0, 0.05, 0.05));
 
-    objects.add(make_shared<Sphere>(Point3( 0.0, -100.5, -1.0), 100.0, materialGround));
+    objects.add(make_shared<Sphere>(Point3( 0.0, -200.5, -1.0), 200.0, materialGround));
     objects.add(make_shared<Sphere>(Point3( 0.0,    0.0, -1.0),   0.5, materialCenter));
     objects.add(make_shared<Sphere>(Point3(-1.0,    0.0, -1.0),   0.5, materialLeft));
     objects.add(make_shared<Sphere>(Point3( 1.0,    0.0, -1.0),   0.5, materialRight));
     objects.add(make_shared<Triangle>(Point3( 2.0, 2.0, 0.0), Point3(0.0, 0.0, 0.0), Point3( 3.0, 2.0, -1.0), materialFiretruckFuckingRed));
 
+    // return objects;
     return CorporealList(make_shared<BvhNode>(objects, 0.0, 1.0));
 }
 
 CorporealList randomScene() {
-    CorporealList world;
+    CorporealList objects;
 
     //Pleasant shade of grey ground.
     auto groundMat = make_shared<Lambertian>(Color(0.5, 0.5, 0.5));
-    world.add(make_shared<Sphere>(Point3(0, -1000, 0), 1000, groundMat));
+    objects.add(make_shared<Sphere>(Point3(0, -1000, 0), 1000, groundMat));
 
     for (int a = -11; a < 11; a++) {
         for (int b = -11; b < 11; b++) {
@@ -154,50 +167,50 @@ CorporealList randomScene() {
                     // Diffuse Lambertian
                     auto albedo = Color::random() * Color::random();
                     sphereMat = make_shared<Lambertian>(albedo);
-                    world.add(make_shared<Sphere>(center, 0.2, sphereMat));
+                    objects.add(make_shared<Sphere>(center, 0.2, sphereMat));
                 } else if (chooseMat < 0.5) {
                     // Diffuse Hemisphere
                     auto albedo = Color::random() * Color::random();
                     sphereMat = make_shared<HemisphereDiffuse>(albedo);
-                    world.add(make_shared<Sphere>(center, 0.2, sphereMat));
+                    objects.add(make_shared<Sphere>(center, 0.2, sphereMat));
                 } else if (chooseMat < 0.8) {
                     // Metal
                     auto albedo = Color::random(0.5, 1);
                     auto fuzz = randomDouble(0, 0.5);
                     sphereMat = make_shared<Metal>(albedo, fuzz);
-                    world.add(make_shared<Sphere>(center, 0.2, sphereMat));
+                    objects.add(make_shared<Sphere>(center, 0.2, sphereMat));
                 } else {
                     // Glass
                     sphereMat = make_shared<Dielectric>(1.5);
-                    world.add(make_shared<Sphere>(center, 0.2, sphereMat));
-                    if (randomDouble() < 0.5) world.add(make_shared<Sphere>(center, -0.15, sphereMat));
+                    objects.add(make_shared<Sphere>(center, 0.2, sphereMat));
+                    if (randomDouble() < 0.5) objects.add(make_shared<Sphere>(center, -0.15, sphereMat));
                 }
             }
         }
     }
 
     auto mat1 = make_shared<Dielectric>(1.5);
-    world.add(make_shared<Sphere>(Point3(0, 1, 0), 1.0, mat1));
+    objects.add(make_shared<Sphere>(Point3(0, 1, 0), 1.0, mat1));
 
     auto mat2 = make_shared<Lambertian>(Color(0.4, 0.0, 0.5));
-    world.add(make_shared<Sphere>(Point3(-4, 1, 0), 1.0, mat2));
+    objects.add(make_shared<Sphere>(Point3(-4, 1, 0), 1.0, mat2));
 
     auto mat3 = make_shared<Metal>(Color(0.7, 0.6, 0.5), 0.0);
-    world.add(make_shared<Sphere>(Point3(4, 1, 0), 1.0, mat3));
+    objects.add(make_shared<Sphere>(Point3(4, 1, 0), 1.0, mat3));
 
-    return world;
+    return CorporealList(make_shared<BvhNode>(objects, 0.0, 1.0));
 }
 
 // Displays pretty progress bar in terminal based on current row and rows still to render
 void progressOut(int i, int imageHeight) {
-        int barWidth = 100;
-        std::cerr << "[";
-        int pos = barWidth * (((double)imageHeight - (double)i) / (double)imageHeight);
-        // std::cout<< pos;
-        for (int i = 0; i < barWidth; i++) {
-            if (i <= pos) std::cerr << "#";
-            else std::cerr << "-";
-        }
-        std::cerr << "] " << int(pos) << " %\r";
-        std::cerr.flush();
+    int barWidth = 100;
+    std::cerr << "[";
+    int pos = barWidth * (((double)imageHeight - (double)i) / (double)imageHeight);
+    // std::cout<< pos;
+    for (int i = 0; i < barWidth; i++) {
+        if (i <= pos) std::cerr << "#";
+        else std::cerr << "-";
+    }
+    std::cerr << "] " << int(pos) << " %\r";
+    std::cerr.flush();
 }

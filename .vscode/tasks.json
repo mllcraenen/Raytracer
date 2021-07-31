@@ -5,7 +5,7 @@
           "type": "shell",
           "label": "g++ build active file",
           "command": "/usr/bin/g++",
-          "args": ["-g", "${fileDirname}/tracer.cpp", "-o", "${fileDirname}/../build/${fileBasenameNoExtension}"],
+          "args": ["-g", "${fileDirname}/tracer.cpp", "-o", "${fileDirname}/../bld/${fileBasenameNoExtension}"],
           "options": {
             "cwd": "/usr/bin"
           },
@@ -15,7 +15,7 @@
         {
           "type": "shell",
           "label": "run ray tracer",
-          "command": "./build/tracer",
+          "command": "./bld/tracer",
           "group": {
             "kind": "build",
             "isDefault": true

@@ -1,7 +1,6 @@
 #ifndef BVH_H
 #define BVH_H
 
-#define FRAME_THICKNESS 0.05
 
 #include "tracer.h"
 
@@ -107,20 +106,25 @@ bool BvhNode::boundingBox(double time0, double time1, AABB& outputBox) const {
  */
 bool BvhNode::hit(const Ray& r, double tMin, double tMax, HitRecord& rec) const {
     if (!box.hit(r, tMin, tMax)) return false;
+
     #ifdef WIREFRAME_MODE
-    else if (!innerBox.hit(r, tMin, tMax)) {
+    bool frameHit = !innerBox.hit(r, tMin, tMax);
+    if (frameHit) {
         // The ray hits the box and specifically its edge, which we want to render
         box.hitFrame(r, tMin, tMax, rec);
-        return true;
     } 
+    // The ray hits the box but does not hit the edge
+    bool hitLeft = left->hit(r, tMin, tMax, rec);
+    bool hitRight = right->hit(r, tMin, hitLeft ? rec.t : tMax, rec);
+
+    return frameHit || hitLeft || hitRight;
+    
+    #else
+    // The ray hits the box but does not hit the edge
+    bool hitLeft = left->hit(r, tMin, tMax, rec);
+    bool hitRight = right->hit(r, tMin, hitLeft ? rec.t : tMax, rec);
+
+    return hitLeft || hitRight;
     #endif
-    else {
-        // The ray hits the box but does not hit the edge
-        bool hitLeft = left->hit(r, tMin, tMax, rec);
-        bool hitRight = right->hit(r, tMin, tMax, rec);
-
-        return hitLeft || hitRight;
-    }
-
 }
 #endif

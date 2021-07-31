@@ -44,16 +44,18 @@ bool CorporealList::hit(const Ray& r, double tMin, double tMax, HitRecord& rec) 
 bool CorporealList::boundingBox(double time0, double time1, AABB& outputBox) const {
     if (objects.empty()) return false;
 
-    AABB box1;
+    AABB tmpBox;
     bool isFirstBox = true;
 
+    // For all objects in the list
     for (const auto& object : objects) {
-        // Put the 
-        bool objectHasBox = object->boundingBox(time0, time1, box1);
+        // If the object has a bounding box it is put in tmpBox and we continue, else return false.
+        bool objectHasBox = object->boundingBox(time0, time1, tmpBox);
         if (!objectHasBox) return false;
-        
-        if (isFirstBox) outputBox = box1;
-        else outputBox = surroundingBox(outputBox, box1);
+        // If this is the first box of a pair we make outputBox the first box. 
+        if (isFirstBox) outputBox = tmpBox;
+        // Else we make the outputbox the surrounding box of the previous box and this one.
+        else outputBox = surroundingBox(outputBox, tmpBox);
         isFirstBox = false;
     }
 
