@@ -2,6 +2,7 @@
 #define TEXTURE_H
 
 #include "tracer.h"
+#include "perlin.h"
 
 class Texture {
     public:
@@ -37,6 +38,34 @@ class Checker : public Texture {
     public:
         shared_ptr<Texture> odd;
         shared_ptr<Texture> even;
+};
+
+class NoiseTexture : public Texture {
+    public:
+        NoiseTexture() {}
+        NoiseTexture(double sc) : scale(sc) {}
+
+        virtual Color value(double u, double v, const Point3& p) const override {
+            return Color(1,1,1) * 0.5 * (1.0 + noise.noise(scale * p));
+        }
+
+    public:
+        Perlin noise;
+        double scale;
+};
+
+class TurbulenceTexture : public Texture {
+    public:
+        TurbulenceTexture() {}
+        TurbulenceTexture(double sc) : scale(sc) {}
+
+        virtual Color value(double u, double v, const Point3& p) const override {
+            return Color(1,1,1) * 0.5 * (1 + sin(scale * p.z() + 10 * noise.turbulence(p)));
+        }
+
+    public:
+        Perlin noise;
+        double scale;
 };
 
 #endif

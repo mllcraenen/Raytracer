@@ -10,13 +10,14 @@
 #include <iostream>
 #include <chrono>
 
-#define SCENE 0
+#define SCENE 2
 
 void progressOut(int i, int imageHeight);
 Color rayColor(const Ray& r, const Corporeal& world, int depth);
 double hitSphere(const Point3& center, double radius, const Ray& r);
 CorporealList randomScene();
 CorporealList devScene();
+CorporealList textureDemoScene();
 
 
 int main() {
@@ -33,6 +34,10 @@ int main() {
         }
         case 1: {
             world = randomScene();
+            break;
+        }
+        case 2: {
+            world = textureDemoScene();
             break;
         }
         default: return 1;
@@ -134,18 +139,29 @@ CorporealList devScene() {
     CorporealList objects;
     auto checker = make_shared<Checker>(Color(0.2, 0.3, 0.9), Color(0.9, 0.9, 0.9));
     auto checker2 = make_shared<Checker>(Color(0.6, 0.6, 0.1), Color(0.9, 0.9, 0.9)); 
-    auto materialGround = make_shared<Metal>(Color(0.5, 0.5, 0.5), .8);
+    auto materialGround = make_shared<Metal>(Color(0.4, 0.9, 0.4), .1);
     // auto materialGround = make_shared<Lambertian>(checker2);
     auto materialLeft = make_shared<Dielectric>(1.5);
     auto materialCenter = make_shared<Lambertian>(checker);
     auto materialRight = make_shared<Lambertian>(Color(0.2, 0.4, 0.1));
     auto materialFiretruckFuckingRed = make_shared<Lambertian>(Color(1.0, 0.05, 0.05));
+    auto materialPerlin = make_shared<Lambertian>(make_shared<NoiseTexture>());
 
-    objects.add(make_shared<Sphere>(Point3( 0.0, -1000.5, -1.0), 1000.0, materialGround));
+    objects.add(make_shared<Sphere>(Point3( 0.0, -1000.5, -1.0), 1000.0, materialPerlin));
     objects.add(make_shared<Sphere>(Point3( 0.0,    0.0, -1.0),   0.5, materialCenter));
     objects.add(make_shared<Sphere>(Point3(-1.0,    0.0, -1.0),   0.5, materialLeft));
     objects.add(make_shared<Sphere>(Point3( 1.0,    0.0, -1.0),   0.5, materialRight));
+    objects.add(make_shared<Sphere>(Point3( 1.0,    1.5, -3.0),   2, materialPerlin));
     objects.add(make_shared<Triangle>(Point3( -0.5, 2.0, 0.0), Point3(0.0, 1.0, 0.0), Point3( 0.5, 2.0, 0.0), materialFiretruckFuckingRed));
+
+    return CorporealList(make_shared<BvhNode>(objects, 0.0, 1.0));
+}
+
+CorporealList textureDemoScene() {
+    CorporealList objects;
+    auto pertext = make_shared<TurbulenceTexture>(4);
+    objects.add(make_shared<Sphere>(Point3(0,-1000,0), 1000, make_shared<Lambertian>(pertext)));
+    objects.add(make_shared<Sphere>(Point3(0,2,0), 2, make_shared<Lambertian>(pertext)));
 
     return CorporealList(make_shared<BvhNode>(objects, 0.0, 1.0));
 }
