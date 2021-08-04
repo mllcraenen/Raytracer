@@ -5,7 +5,7 @@
           "type": "shell",
           "label": "g++ build active file",
           "command": "/usr/bin/g++",
-          "args": ["-g", "${fileDirname}/tracer.cpp", "-o", "${fileDirname}/../bld/${fileBasenameNoExtension}"],
+          "args": ["-g", "${fileDirname}/tracer.cpp", "-o", "${fileDirname}/../bld/${fileBasenameNoExtension}", "-std=c++11", "-pthread"],
           "options": {
             "cwd": "/usr/bin"
           },
