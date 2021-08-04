@@ -9,15 +9,25 @@
 
 #include <iostream>
 #include <chrono>
+#include <thread>
+#include <mutex>
+#include "unistd.h"
 
-#define SCENE 2
+#define SCENE 0
 
 void progressOut(int i, int imageHeight);
+void allocateThread(int pixelsToAllocate, int imageHeight, int imageWidth, int& i, int& j, CorporealList& world);
+void tracePixel(int iStart, int iEnd, int jStart, int jEnd, int imageHeight, int imageWidth, CorporealList world);
 Color rayColor(const Ray& r, const Corporeal& world, int depth);
 double hitSphere(const Point3& center, double radius, const Ray& r);
 CorporealList randomScene();
 CorporealList devScene();
 CorporealList textureDemoScene();
+
+int maxThreads = std::thread::hardware_concurrency();
+Color imageBuffer[imageHeight][imageWidth];
+std::vector<std::thread> threads;
+std::mutex imageBufferMutex;
 
 
 int main() {
@@ -46,32 +56,35 @@ int main() {
     // Define output
     freopen("out.ppm", "w", stdout);
 
-    // Render PPM
+    // Init PPM file
     std::cout << "P3\n" << imageWidth << ' ' << imageHeight << "\n255\n";
     
     // (0,0) is bottom left. 
     // Thus working from top to bottom left to right has us counting down for rows and counting up columns.
+    int pixels = imageWidth * imageHeight;
+    int pixelsPerThread = (int)(pixels / (maxThreads - 1));
+    // std::cerr << "Pixels per thread: " << pixelsPerThread << "\n";
+    int i = imageHeight - 1;
+    int j = 0;
+    while (i > 0) {
+        allocateThread(pixelsPerThread, imageHeight, imageWidth, i, j, world);
+    }
+
+    for (auto& th : threads) th.join();
+
     for (int i = imageHeight - 1; i >= 0; i--) {
-        progressOut(i, imageHeight);
-
-
         for (int j = 0; j < imageWidth; j++) {
-            Color pixelColor(0,0,0);
-            
-            for(int sample = 0; sample < samplesPerPixel; sample++) {
-                auto u = (j + randomDouble()) / (imageWidth - 1);
-                auto v = (i + randomDouble()) / (imageHeight - 1);              
-
-                // Birthe a Ray and send it out into the wild world
-                Ray r = cam.getRay(u, v);
-                pixelColor += rayColor(r, world, maxBounceDepth);                  
-            }
-
-
-            // Write the Color to `cout`
-            writeColor(std::cout, pixelColor, samplesPerPixel);
+            writeColor(std::cout, imageBuffer[i][j], samplesPerPixel);
         }
     }
+
+
+    // for (int i = imageHeight - 1; i >= 0; i--) {
+    //     progressOut(i, imageHeight);
+    //     for (int j = 0; j < imageWidth; j++) {
+    //         threads.emplace_back(std::thread(tracePixel, i, j, j, world));
+    //     }
+    // }
 
 
     //DEBUGTIMER
@@ -80,6 +93,65 @@ int main() {
     std::cerr << "\nRender complete.\n";
     std::cerr << "Elapsed time = " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << " [ms]" << std::endl;
     return 0;
+}
+
+void allocateThread(int pixelsToAllocate, int imageHeight, int imageWidth, int& i, int& j, CorporealList& world) {
+    int threadStartI = i;
+
+    //// Determine for the thread the i and j to end on.
+    
+    // First subtract pixel's to the end of the row. These don't count for the full row count because they have to be filled first.
+    //
+    // row ||--------|-----------------||
+    //     0        j=4                99     -> subtract 95 from pixels to allocate
+    pixelsToAllocate -= (imageWidth - j);
+
+    // Now we will determine how many full rows we can render with the remaining pixels to allocate
+    int fullRowsToRender = (int)pixelsToAllocate / imageWidth;
+    // Subtract the amount of full rows from the pixels to allocate.
+    pixelsToAllocate -= (fullRowsToRender * imageWidth);
+    // And from that determine the j to end on. Subtract 1 because j is 0 indexed
+    // int endJ = pixelsToAllocate % imageWidth;
+    int endJ = pixelsToAllocate;
+    endJ--;
+    int threadEndI = (i - fullRowsToRender) >= 0 ? i - fullRowsToRender : 0;
+
+    // std::cerr << "Start row: " << threadStartI << " / End row: " << threadEndI << " || setting another " << endJ << " pixels.\n";
+
+    threads.emplace_back(std::thread(tracePixel, threadStartI, threadEndI, j, endJ, imageHeight, imageWidth, world));
+    // Set i and j to the value the next thread can start from.
+    i = threadEndI;
+    j = endJ;
+}
+
+void tracePixel(int iStart, int iEnd, int jStart, int jEnd, int imageHeight, int imageWidth, CorporealList world) {
+    int i = iStart;
+    int j = jStart;
+    
+    // While we still have rows to render, or we are on the last row but not the last pixel to render
+    while (i > iEnd || (i == iEnd && j < jEnd)) {
+        // Trace pixels until the end of the row or if we are on the last row until the designated stop spot.
+        while (j < imageWidth || (i == iEnd && j < jEnd)) {
+            // Render a pixel
+            Color pixelColor(0,0,0);
+            for (int sample = 0; sample < samplesPerPixel; sample++) {
+                auto u = (j + randomDouble()) / (imageWidth - 1);
+                auto v = (i + randomDouble()) / (imageHeight - 1);              
+
+                // Birthe a Ray and send it out into the wild world
+                Ray r = cam.getRay(u, v);
+                pixelColor += rayColor(r, world, maxBounceDepth);              
+            }
+            // imageBufferMutex.lock();
+            // Write the Color to `cout`
+            imageBuffer[i][j] = pixelColor;
+            // imageBufferMutex.unlock();
+            j++;
+        }
+        // Decrement the row and reset the j pointer
+        i--;
+        j = 0;
+    }
 }
 
 
@@ -147,7 +219,7 @@ CorporealList devScene() {
     auto materialFiretruckFuckingRed = make_shared<Lambertian>(Color(1.0, 0.05, 0.05));
     auto materialPerlin = make_shared<Lambertian>(make_shared<NoiseTexture>());
 
-    objects.add(make_shared<Sphere>(Point3( 0.0, -1000.5, -1.0), 1000.0, materialPerlin));
+    objects.add(make_shared<Sphere>(Point3( 0.0, -1000.5, -1.0), 1000.0, materialGround));
     objects.add(make_shared<Sphere>(Point3( 0.0,    0.0, -1.0),   0.5, materialCenter));
     objects.add(make_shared<Sphere>(Point3(-1.0,    0.0, -1.0),   0.5, materialLeft));
     objects.add(make_shared<Sphere>(Point3( 1.0,    0.0, -1.0),   0.5, materialRight));
@@ -159,9 +231,9 @@ CorporealList devScene() {
 
 CorporealList textureDemoScene() {
     CorporealList objects;
-    auto pertext = make_shared<TurbulenceTexture>(4);
-    objects.add(make_shared<Sphere>(Point3(0,-1000,0), 1000, make_shared<Lambertian>(pertext)));
-    objects.add(make_shared<Sphere>(Point3(0,2,0), 2, make_shared<Lambertian>(pertext)));
+    auto perlinMarble = make_shared<Lambertian>(make_shared<TurbulenceTexture>(4));
+    objects.add(make_shared<Sphere>(Point3(0,-1000,0), 1000, perlinMarble));
+    objects.add(make_shared<Sphere>(Point3(0,2,0), 2, perlinMarble));
 
     return CorporealList(make_shared<BvhNode>(objects, 0.0, 1.0));
 }
@@ -169,8 +241,8 @@ CorporealList textureDemoScene() {
 CorporealList randomScene() {
     CorporealList objects;
 
-    //Pleasant shade of grey ground.
-    auto groundMat = make_shared<Lambertian>(Color(0.5, 0.5, 0.5));
+    //Pleasant shade of checker ground.
+    auto groundMat = make_shared<Lambertian>(make_shared<Checker>(Color(0.2, 0.3, 0.1), Color(0.9, 0.9, 0.9)));
     objects.add(make_shared<Sphere>(Point3(0, -1000, 0), 1000, groundMat));
 
     for (int a = -11; a < 11; a++) {
@@ -181,20 +253,19 @@ CorporealList randomScene() {
             if ((center - Point3(4, 0.2, 0)).length() > 0.9) {
                 shared_ptr<Material> sphereMat;
 
-                if (chooseMat < 0.3) {
+                if (chooseMat < 0.25) {
                     // Diffuse Lambertian
                     auto albedo = Color::random() * Color::random();
                     sphereMat = make_shared<Lambertian>(albedo);
                     objects.add(make_shared<Sphere>(center, 0.2, sphereMat));
                 } else if (chooseMat < 0.5) {
-                    // Diffuse Hemisphere
-                    auto albedo = Color::random() * Color::random();
-                    sphereMat = make_shared<HemisphereDiffuse>(albedo);
+                    // Diffuse Marbled
+                    sphereMat = make_shared<Lambertian>(make_shared<TurbulenceTexture>(randomInt(10,15)));
                     objects.add(make_shared<Sphere>(center, 0.2, sphereMat));
                 } else if (chooseMat < 0.8) {
                     // Metal
                     auto albedo = Color::random(0.5, 1);
-                    auto fuzz = randomDouble(0, 0.5);
+                    auto fuzz = randomDouble(0, 0.1);
                     sphereMat = make_shared<Metal>(albedo, fuzz);
                     objects.add(make_shared<Sphere>(center, 0.2, sphereMat));
                 } else {
@@ -220,10 +291,10 @@ CorporealList randomScene() {
 }
 
 // Displays pretty progress bar in terminal based on current row and rows still to render
-void progressOut(int i, int imageHeight) {
+void progressOut(int current, int total) {
     int barWidth = 100;
     std::cerr << "[";
-    int pos = barWidth * (((double)imageHeight - (double)i) / (double)imageHeight);
+    int pos = barWidth * (((double)total - (double)current) / (double)total);
     // std::cout<< pos;
     for (int i = 0; i < barWidth; i++) {
         if (i <= pos) std::cerr << "#";

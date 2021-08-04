@@ -58,11 +58,11 @@ using std::sqrt;
 //// Constants
 // Define image parameters
 const auto aspectRatio = 16.0 / 9.0;
-const int imageWidth = 200;
+const int imageWidth = 400;
 const int imageHeight = (int)(imageWidth / aspectRatio);
 
-const int samplesPerPixel = 80;
-const int maxBounceDepth = 5;
+const int samplesPerPixel = 50;
+const int maxBounceDepth = 8;
 const double imageGamma = 2.0;
 
 //// Variables
