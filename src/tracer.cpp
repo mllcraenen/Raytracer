@@ -27,7 +27,6 @@ CorporealList textureDemoScene();
 int maxThreads = std::thread::hardware_concurrency();
 Color imageBuffer[imageHeight][imageWidth];
 std::vector<std::thread> threads;
-std::mutex imageBufferMutex;
 
 
 int main() {
@@ -142,10 +141,8 @@ void tracePixel(int iStart, int iEnd, int jStart, int jEnd, int imageHeight, int
                 Ray r = cam.getRay(u, v);
                 pixelColor += rayColor(r, world, maxBounceDepth);              
             }
-            // imageBufferMutex.lock();
             // Write the Color to `cout`
             imageBuffer[i][j] = pixelColor;
-            // imageBufferMutex.unlock();
             j++;
         }
         // Decrement the row and reset the j pointer

@@ -61,7 +61,7 @@ const auto aspectRatio = 16.0 / 9.0;
 const int imageWidth = 400;
 const int imageHeight = (int)(imageWidth / aspectRatio);
 
-const int samplesPerPixel = 50;
+const int samplesPerPixel = 30;
 const int maxBounceDepth = 8;
 const double imageGamma = 2.0;
 
