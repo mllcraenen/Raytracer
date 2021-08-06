@@ -58,16 +58,16 @@ using std::sqrt;
 //// Constants
 // Define image parameters
 const auto aspectRatio = 16.0 / 9.0;
-const int imageWidth = 400;
+const int imageWidth = 255;
 const int imageHeight = (int)(imageWidth / aspectRatio);
 
-const int samplesPerPixel = 30;
-const int maxBounceDepth = 8;
+const int samplesPerPixel = 10;
+const int maxBounceDepth = 5;
 const double imageGamma = 2.0;
 
 //// Variables
-Point3 cameraOrigin = Point3(-6, 2.5, 6);
-Point3 cameraLookAt = Point3(0, 1, -1);
+Point3 cameraOrigin = Point3(6, 4, 8);
+Point3 cameraLookAt = Point3(0, 2, 0);
 Vec3 cameraUp = Vec3(0, 1, 0);
 auto hFOV = 50.0;
 auto distToFocus = 10.0;

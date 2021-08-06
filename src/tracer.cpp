@@ -13,7 +13,7 @@
 #include <mutex>
 #include "unistd.h"
 
-#define SCENE 0
+#define SCENE 1
 
 void progressOut(int i, int imageHeight);
 void allocateThread(int pixelsToAllocate, int imageHeight, int imageWidth, int& i, int& j, CorporealList& world);
@@ -228,9 +228,9 @@ CorporealList devScene() {
 
 CorporealList textureDemoScene() {
     CorporealList objects;
-    auto perlinMarble = make_shared<Lambertian>(make_shared<TurbulenceTexture>(4));
-    objects.add(make_shared<Sphere>(Point3(0,-1000,0), 1000, perlinMarble));
-    objects.add(make_shared<Sphere>(Point3(0,2,0), 2, perlinMarble));
+    auto earthSurface = make_shared<Lambertian>(make_shared<ImageTexture>("src/txt/earthmap.jpg"));
+    objects.add(make_shared<Sphere>(Point3(0,-1000,0), 1000, earthSurface));
+    objects.add(make_shared<Sphere>(Point3(0,2,0), 2, earthSurface));
 
     return CorporealList(make_shared<BvhNode>(objects, 0.0, 1.0));
 }
