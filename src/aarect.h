@@ -71,7 +71,7 @@ bool XZ_Rectangle::hit(const Ray& r, double tMin, double tMax, HitRecord& rec) c
     rec.u = (x - x0) / (x1 - x0);
     rec.v = (z - z0) / (z1 - z0);
     rec.t = t;
-    auto outwardNormal = Vec3(0, 0, 1);
+    auto outwardNormal = Vec3(0, 1, 0);
     rec.setFaceNormal(r, outwardNormal);
     rec.matPtr = matPtr;
     rec.p = r.at(t);
@@ -108,7 +108,7 @@ bool YZ_Rectangle::hit(const Ray& r, double tMin, double tMax, HitRecord& rec) c
     rec.u = (y - y0) / (y1 - y0);
     rec.v = (z - z0) / (z1 - z0);
     rec.t = t;
-    auto outwardNormal = Vec3(0, 0, 1);
+    auto outwardNormal = Vec3(1, 0, 0);
     rec.setFaceNormal(r, outwardNormal);
     rec.matPtr = matPtr;
     rec.p = r.at(t);

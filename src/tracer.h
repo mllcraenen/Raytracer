@@ -57,24 +57,26 @@ using std::sqrt;
 
 //// Constants
 // Define image parameters
-const auto aspectRatio = 16.0 / 9.0;
+const auto aspectRatio = 1;
 const int imageWidth = 255;
-const int imageHeight = (int)(imageWidth / aspectRatio);
-
-const int samplesPerPixel = 10;
-const int maxBounceDepth = 5;
-const double imageGamma = 2.0;
+const int imageHeight = static_cast<int>(imageWidth / aspectRatio);
+int samplesPerPixel = 100;
+int maxBounceDepth = 5;
+double imageGamma = 2.0;
 
 //// Variables
-Point3 cameraOrigin = Point3(26, 4, 8);
+Point3 cameraOrigin = Point3(26, 3, 6);
 Point3 cameraLookAt = Point3(0, 2, 0);
 Vec3 cameraUp = Vec3(0, 1, 0);
-auto hFOV = 50.0;
+auto hFOV = 40.0;
 auto distToFocus = 10.0;
 auto aperture = 0.1;
 Color background(0,0,0);
 
 Camera cam(cameraOrigin, cameraLookAt, cameraUp, hFOV, aspectRatio, aperture, distToFocus);
 
+//// SCENE SELECTOR
+enum Scenes { DEV, TEXTURE, LIGHT, BENCHMARK, CORNELL };
+Scenes SCENE = CORNELL;
 
 #endif

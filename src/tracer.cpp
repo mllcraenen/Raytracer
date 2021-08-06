@@ -1,5 +1,6 @@
 #include "tracer.h"
 
+#include "scn/scenes.h"
 #include "color.h"
 #include "corporealList.h"
 #include "material.h"
@@ -14,17 +15,12 @@
 #include <mutex>
 #include "unistd.h"
 
-#define SCENE 3
 
 void progressOut(int i, int imageHeight);
 void allocateThread(int pixelsToAllocate, int imageHeight, int imageWidth, int& i, int& j, CorporealList& world);
 void tracePixel(int iStart, int iEnd, int jStart, int jEnd, int imageHeight, int imageWidth, CorporealList world);
 Color rayColor(const Ray& r, const Color& background, const Corporeal& world, int depth);
 double hitSphere(const Point3& center, double radius, const Ray& r);
-CorporealList randomScene();
-CorporealList devScene();
-CorporealList textureDemoScene();
-CorporealList lightTestScene();
 
 int maxThreads = std::thread::hardware_concurrency();
 Color imageBuffer[imageHeight][imageWidth];
@@ -36,33 +32,14 @@ int main() {
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     
     // Define World with objects
-    CorporealList world;
-    switch(SCENE) {
-        default:
-        case 0: {
-            world = devScene();
-            background = Color(0.70, 0.80, 1.00);
-            break;
-        }
-        case 1: {
-            world = randomScene();
-            background = Color(0.70, 0.80, 1.00);
-            break;
-        }
-        case 2: {
-            world = textureDemoScene();
-            background = Color(0.70, 0.80, 1.00);
-            break;
-        }
-        case 3: {
-            world = lightTestScene();
-            background = Color(0,0,0);
-            break;
-        }
-    }
+    CorporealList world = worldGen(SCENE);
+    // Define Camera
 
     // Define output
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wunused-result" 
     freopen("out.ppm", "w", stdout);
+    #pragma GCC diagnostic pop 
 
     // Init PPM file
     std::cout << "P3\n" << imageWidth << ' ' << imageHeight << "\n255\n";
@@ -208,101 +185,6 @@ double hitSphere(const Point3& center, double radius, const Ray& r) {
     }
 }
 
-CorporealList devScene() {
-    CorporealList objects;
-    auto checker = make_shared<Checker>(Color(0.2, 0.3, 0.9), Color(0.9, 0.9, 0.9));
-    auto checker2 = make_shared<Checker>(Color(0.6, 0.6, 0.1), Color(0.9, 0.9, 0.9)); 
-    auto materialGround = make_shared<Metal>(Color(0.4, 0.9, 0.4), .1);
-    // auto materialGround = make_shared<Lambertian>(checker2);
-    auto materialLeft = make_shared<Dielectric>(1.5);
-    auto materialCenter = make_shared<Lambertian>(checker);
-    auto materialRight = make_shared<Lambertian>(Color(0.2, 0.4, 0.1));
-    auto materialFiretruckFuckingRed = make_shared<Lambertian>(Color(1.0, 0.05, 0.05));
-    auto materialPerlin = make_shared<Lambertian>(make_shared<NoiseTexture>());
-
-    objects.add(make_shared<Sphere>(Point3( 0.0, -1000.5, -1.0), 1000.0, materialGround));
-    objects.add(make_shared<Sphere>(Point3( 0.0,    0.0, -1.0),   0.5, materialCenter));
-    objects.add(make_shared<Sphere>(Point3(-1.0,    0.0, -1.0),   0.5, materialLeft));
-    objects.add(make_shared<Sphere>(Point3( 1.0,    0.0, -1.0),   0.5, materialRight));
-    objects.add(make_shared<Sphere>(Point3( 1.0,    1.5, -3.0),   2, materialPerlin));
-    objects.add(make_shared<Triangle>(Point3( -0.5, 2.0, 0.0), Point3(0.0, 1.0, 0.0), Point3( 0.5, 2.0, 0.0), materialFiretruckFuckingRed));
-
-    return CorporealList(make_shared<BvhNode>(objects, 0.0, 1.0));
-}
-
-CorporealList textureDemoScene() {
-    CorporealList objects;
-    auto earthSurface = make_shared<Lambertian>(make_shared<ImageTexture>("src/txt/earthmap.jpg"));
-    // objects.add(make_shared<Sphere>(Point3(0,-1000,0), 1000, earthSurface));
-    objects.add(make_shared<Sphere>(Point3(0,2,0), 2, earthSurface));
-
-    return CorporealList(make_shared<BvhNode>(objects, 0.0, 1.0));
-}
-
-CorporealList lightTestScene() {
-    CorporealList objects;
-    auto earth = make_shared<ImageTexture>("src/txt/earthmap.jpg");
-
-    auto pertext = make_shared<NoiseTexture>(4);
-    objects.add(make_shared<Sphere>(Point3(0,-1000,0), 1000, make_shared<Lambertian>(pertext)));
-    objects.add(make_shared<Sphere>(Point3(0,2,0), 2, make_shared<Lambertian>(earth)));
-
-    auto difflight = make_shared<DiffuseLight>(Color(4,4,4));
-    objects.add(make_shared<XY_Rectangle>(3, 5, 1, 3, -2, difflight));
-    return objects;
-}
-
-CorporealList randomScene() {
-    CorporealList objects;
-
-    //Pleasant shade of checker ground.
-    auto groundMat = make_shared<Lambertian>(make_shared<Checker>(Color(0.2, 0.3, 0.1), Color(0.9, 0.9, 0.9)));
-    objects.add(make_shared<Sphere>(Point3(0, -1000, 0), 1000, groundMat));
-
-    for (int a = -11; a < 11; a++) {
-        for (int b = -11; b < 11; b++) {
-            auto chooseMat = randomDouble();
-            Point3 center(a + 0.9 * randomDouble(), 0.2, b + 0.9 * randomDouble());
-
-            if ((center - Point3(4, 0.2, 0)).length() > 0.9) {
-                shared_ptr<Material> sphereMat;
-
-                if (chooseMat < 0.25) {
-                    // Diffuse Lambertian
-                    auto albedo = Color::random() * Color::random();
-                    sphereMat = make_shared<Lambertian>(albedo);
-                    objects.add(make_shared<Sphere>(center, 0.2, sphereMat));
-                } else if (chooseMat < 0.5) {
-                    // Diffuse Marbled
-                    sphereMat = make_shared<Lambertian>(make_shared<TurbulenceTexture>(randomInt(10,15)));
-                    objects.add(make_shared<Sphere>(center, 0.2, sphereMat));
-                } else if (chooseMat < 0.8) {
-                    // Metal
-                    auto albedo = Color::random(0.5, 1);
-                    auto fuzz = randomDouble(0, 0.1);
-                    sphereMat = make_shared<Metal>(albedo, fuzz);
-                    objects.add(make_shared<Sphere>(center, 0.2, sphereMat));
-                } else {
-                    // Glass
-                    sphereMat = make_shared<Dielectric>(1.5);
-                    objects.add(make_shared<Sphere>(center, 0.2, sphereMat));
-                    if (randomDouble() < 0.5) objects.add(make_shared<Sphere>(center, -0.15, sphereMat));
-                }
-            }
-        }
-    }
-
-    auto mat1 = make_shared<Dielectric>(1.5);
-    objects.add(make_shared<Sphere>(Point3(0, 1, 0), 1.0, mat1));
-
-    auto mat2 = make_shared<Lambertian>(Color(0.4, 0.0, 0.5));
-    objects.add(make_shared<Sphere>(Point3(-4, 1, 0), 1.0, mat2));
-
-    auto mat3 = make_shared<Metal>(Color(0.7, 0.6, 0.5), 0.0);
-    objects.add(make_shared<Sphere>(Point3(4, 1, 0), 1.0, mat3));
-
-    return CorporealList(make_shared<BvhNode>(objects, 0.0, 1.0));
-}
 
 // Displays pretty progress bar in terminal based on current row and rows still to render
 void progressOut(int current, int total) {
