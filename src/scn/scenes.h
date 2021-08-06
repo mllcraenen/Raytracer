@@ -10,6 +10,7 @@
 #include "../triangle.h"
 #include "../aarect.h"
 #include "../bvh.h"
+#include "../box.h"
 
 
 CorporealList randomScene();
@@ -51,7 +52,7 @@ CorporealList worldGen(Scenes scene) {
             world = cornellBox();
             // aspectRatio = 1.0;
             // imageWidth = 600;
-            samplesPerPixel = 300;
+            samplesPerPixel = 500;
             background = Color(0,0,0);
             cameraOrigin = Point3(278, 278, -800);
             cameraLookAt = Point3(278, 278, 0);
@@ -173,6 +174,16 @@ CorporealList cornellBox() {
     objects.add(make_shared<XZ_Rectangle>(0, 555, 0, 555, 0, white));
     objects.add(make_shared<XZ_Rectangle>(0, 555, 0, 555, 555, white));
     objects.add(make_shared<XY_Rectangle>(0, 555, 0, 555, 555, white));
+    
+    shared_ptr<Corporeal> box1 = make_shared<Box>(Point3(0, 0, 0), Point3(165, 330, 165), white);
+    box1 = make_shared<RotateY>(box1, 15);
+    box1 = make_shared<Translate>(box1, Vec3(265,0,295));
+    objects.add(box1);
+
+    shared_ptr<Corporeal> box2 = make_shared<Box>(Point3(0,0,0), Point3(165,165,165), white);
+    box2 = make_shared<RotateY>(box2, -18);
+    box2 = make_shared<Translate>(box2, Vec3(130,0,65));
+    objects.add(box2);
 
     return objects;
 }

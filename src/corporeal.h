@@ -12,13 +12,13 @@ struct HitRecord {
     Vec3 normal;
     shared_ptr<Material> matPtr;
     double t;
-    // Surface coordinates of ray-object intersection point.
+    // Surface coordinates of Ray-object intersection point.
     double u;
     double v;
-    // Whether the ray intersects from the front/outside or back/inside
+    // Whether the Ray intersects from the front/outside or back/inside
     bool frontFace;
-    // The ray intersected from the front/outside if the normal points in the opposite direction.
-    // If they are facing in the same direction the ray hit from the back/inside.
+    // The Ray intersected from the front/outside if the normal points in the opposite direction.
+    // If they are facing in the same direction the Ray hit from the back/inside.
     // The directions are compared with the dot product, where <0 means front hit.
     inline void setFaceNormal(const Ray &r, const Vec3& outwardNormal) {
         frontFace = dot(r.direction(), outwardNormal) < 0;
@@ -31,5 +31,25 @@ class Corporeal {
         virtual bool hit(const Ray& r, double tMin, double tMax, HitRecord& rec) const = 0;
         virtual bool boundingBox(double time0, double time1, AABB& outputBox) const = 0;
 };
+
+class Translate : public Corporeal {
+    public:
+        Translate(shared_ptr<Corporeal> p, const Vec3& displacement) : ptr(p), offset(displacement) {}
+        
+        virtual bool hit(const Ray& r, double tMin, double tMax, HitRecord& rec) const override;
+        virtual bool boundingBox(double time0, double time1, AABB& outputBox) const override;
+
+    public:
+        shared_ptr<Corporeal> ptr;
+        Vec3 offset;
+};
+
+bool Translate::hit(const Ray& r, double tMin, double tMax, HitRecord& rec) const {
+    Ray movedRay(r.origin() - offset, r.direction());
+    if(!ptr->hit(movedRay, tMin, tMax, rec)) return false;
+    rec.p += offset;
+    rec.setFaceNormal(movedRay, rec.normal);
+    return true;
+}
 
 #endif
