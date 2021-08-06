@@ -5,6 +5,7 @@
 #include "material.h"
 #include "sphere.h"
 #include "triangle.h"
+#include "aarect.h"
 #include "bvh.h"
 
 #include <iostream>
@@ -13,16 +14,17 @@
 #include <mutex>
 #include "unistd.h"
 
-#define SCENE 1
+#define SCENE 3
 
 void progressOut(int i, int imageHeight);
 void allocateThread(int pixelsToAllocate, int imageHeight, int imageWidth, int& i, int& j, CorporealList& world);
 void tracePixel(int iStart, int iEnd, int jStart, int jEnd, int imageHeight, int imageWidth, CorporealList world);
-Color rayColor(const Ray& r, const Corporeal& world, int depth);
+Color rayColor(const Ray& r, const Color& background, const Corporeal& world, int depth);
 double hitSphere(const Point3& center, double radius, const Ray& r);
 CorporealList randomScene();
 CorporealList devScene();
 CorporealList textureDemoScene();
+CorporealList lightTestScene();
 
 int maxThreads = std::thread::hardware_concurrency();
 Color imageBuffer[imageHeight][imageWidth];
@@ -32,24 +34,31 @@ std::vector<std::thread> threads;
 int main() {
     //DEBUGTIMER
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-
     
     // Define World with objects
     CorporealList world;
     switch(SCENE) {
+        default:
         case 0: {
             world = devScene();
+            background = Color(0.70, 0.80, 1.00);
             break;
         }
         case 1: {
             world = randomScene();
+            background = Color(0.70, 0.80, 1.00);
             break;
         }
         case 2: {
             world = textureDemoScene();
+            background = Color(0.70, 0.80, 1.00);
             break;
         }
-        default: return 1;
+        case 3: {
+            world = lightTestScene();
+            background = Color(0,0,0);
+            break;
+        }
     }
 
     // Define output
@@ -139,7 +148,7 @@ void tracePixel(int iStart, int iEnd, int jStart, int jEnd, int imageHeight, int
 
                 // Birthe a Ray and send it out into the wild world
                 Ray r = cam.getRay(u, v);
-                pixelColor += rayColor(r, world, maxBounceDepth);              
+                pixelColor += rayColor(r, background, world, maxBounceDepth);              
             }
             // Write the Color to `cout`
             imageBuffer[i][j] = pixelColor;
@@ -152,7 +161,7 @@ void tracePixel(int iStart, int iEnd, int jStart, int jEnd, int imageHeight, int
 }
 
 
-Color rayColor(const Ray& r, const Corporeal& world, int depth) {
+Color rayColor(const Ray& r, const Color& background, const Corporeal& world, int depth) {
     HitRecord rec;
 
     // If the ray bounce limit is exceeded do not continue.
@@ -164,22 +173,17 @@ Color rayColor(const Ray& r, const Corporeal& world, int depth) {
     if (world.hit(r, 0.001, infinity, rec)) {
         Ray scattered;
         Color attenuation;
+        Color emitted = rec.matPtr->emitted(rec.u, rec.v, rec.p);
         
         // Scatter the ray in accordance with the Corporeal's Material.
         if (rec.matPtr->scatter(r, rec, attenuation, scattered)) {
-            return attenuation * rayColor(scattered, world, depth - 1);
+            return emitted + attenuation * rayColor(scattered, background, world, depth - 1);
         }
-
-        return Color(0,0,0);
+        // If the material doesn't scatter we return the emitted color.
+        return emitted;
     }
-
-    Vec3 unitDirection = unitVector(r.direction());
-    auto t = 0.5 * (unitDirection.y() + 1.0);
-    
-    // Set a BG gradient
-    Color Color1BG = Color(1.0, 1.0, 1.0);
-    Color Color2BG = Color(0.5, 0.7, 1.0);
-    return (1.0 - t) * Color1BG + t * Color2BG;
+    // If we don't hit anything in the first place we return the BG color.
+    return background;
 }
 
 
@@ -229,10 +233,23 @@ CorporealList devScene() {
 CorporealList textureDemoScene() {
     CorporealList objects;
     auto earthSurface = make_shared<Lambertian>(make_shared<ImageTexture>("src/txt/earthmap.jpg"));
-    objects.add(make_shared<Sphere>(Point3(0,-1000,0), 1000, earthSurface));
+    // objects.add(make_shared<Sphere>(Point3(0,-1000,0), 1000, earthSurface));
     objects.add(make_shared<Sphere>(Point3(0,2,0), 2, earthSurface));
 
     return CorporealList(make_shared<BvhNode>(objects, 0.0, 1.0));
+}
+
+CorporealList lightTestScene() {
+    CorporealList objects;
+    auto earth = make_shared<ImageTexture>("src/txt/earthmap.jpg");
+
+    auto pertext = make_shared<NoiseTexture>(4);
+    objects.add(make_shared<Sphere>(Point3(0,-1000,0), 1000, make_shared<Lambertian>(pertext)));
+    objects.add(make_shared<Sphere>(Point3(0,2,0), 2, make_shared<Lambertian>(earth)));
+
+    auto difflight = make_shared<DiffuseLight>(Color(4,4,4));
+    objects.add(make_shared<XY_Rectangle>(3, 5, 1, 3, -2, difflight));
+    return objects;
 }
 
 CorporealList randomScene() {

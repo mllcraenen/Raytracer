@@ -66,12 +66,13 @@ const int maxBounceDepth = 5;
 const double imageGamma = 2.0;
 
 //// Variables
-Point3 cameraOrigin = Point3(6, 4, 8);
+Point3 cameraOrigin = Point3(26, 4, 8);
 Point3 cameraLookAt = Point3(0, 2, 0);
 Vec3 cameraUp = Vec3(0, 1, 0);
 auto hFOV = 50.0;
 auto distToFocus = 10.0;
 auto aperture = 0.1;
+Color background(0,0,0);
 
 Camera cam(cameraOrigin, cameraLookAt, cameraUp, hFOV, aspectRatio, aperture, distToFocus);
 
