@@ -3,4 +3,5 @@ dbg/*
 .vscode/*
 *.vscode
 *.identifier
+*.Identifier
 out.ppm
